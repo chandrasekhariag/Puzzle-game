@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sliding Puzzle Game</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+
+        #menu, #game {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #puzzle-container {
+            display: grid;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .puzzle-piece {
+            background-color: #ffffff;
+            border: 1px solid #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        #controls {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 420px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="menu">
+        <h1>Select Difficulty</h1>
+        <button onclick="startGame('easy')">Easy (3x3)</button>
+        <button onclick="startGame('medium')">Medium (4x4)</button>
+        <button onclick="startGame('hard')">Hard (5x5)</button>
+    </div>
+
+    <div id="game">
+        <div id="controls">
+            <button onclick="shuffle()">Shuffle</button>
+            <div>Moves: <span id="move-counter">0</span></div>
+            <div>Time: <span id="timer">0</span> sec</div>
+        </div>
+        <div id="puzzle-container"></div>
+    </div>
+
+    <script>
+        const puzzleContainer = document.getElementById('puzzle-container');
+        const moveCounter = document.getElementById('move-counter');
+        const timerDisplay = document.getElementById('timer');
+        const menu = document.getElementById('menu');
+        const game = document.getElementById('game');
+
+        let pieces = [];
+        let moves = 0;
+        let timer;
+        let seconds = 0;
+        let size = 4; // Default to medium
+
+        function createPieces(size) {
+            pieces = [];
+            for (let i = 1; i <= size * size - 1; i++) {
+                pieces.push(i);
+            }
+            pieces.push(null);
+        }
+
+        function renderPuzzle() {
+            puzzleContainer.innerHTML = '';
+            puzzleContainer.style.gridTemplateColumns = `repeat(${size}, 100px)`;
+            puzzleContainer.style.gridTemplateRows = `repeat(${size}, 100px)`;
+            pieces.forEach((piece, index) => {
+                const pieceElement = document.createElement('div');
+                pieceElement.classList.add('puzzle-piece');
+                pieceElement.style.width = pieceElement.style.height = `${400 / size}px`;
+                if (piece !== null) {
+                    pieceElement.textContent = piece;
+                    pieceElement.style.backgroundImage = 'url("https://source.unsplash.com/400x400/?nature,water")';
+                    pieceElement.style.backgroundSize = `${400}px ${400}px`;
+                    pieceElement.style.backgroundPosition = `${(piece - 1) % size * -100 / size}px ${Math.floor((piece - 1) / size) * -100 / size}px`;
+                    pieceElement.addEventListener('click', () => movePiece(piece));
+                } else {
+                    pieceElement.style.background = '#f0f0f0';
+                }
+                puzzleContainer.appendChild(pieceElement);
+            });
+        }
+
+        function shuffle() {
+            for (let i = pieces.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
+            }
+            moves = 0;
+            moveCounter.textContent = moves;
+            clearInterval(timer);
+            seconds = 0;
+            timerDisplay.textContent = seconds;
+            timer = setInterval(() => {
+                seconds++;
+                timerDisplay.textContent = seconds;
+            }, 1000);
+            renderPuzzle();
+        }
+
+        function movePiece(piece) {
+            const index = pieces.indexOf(piece);
+            const emptyIndex = pieces.indexOf(null);
+            const validMoves = [emptyIndex - size, emptyIndex + size, emptyIndex - 1, emptyIndex + 1];
+            if (validMoves.includes(index) && (Math.floor(index / size) === Math.floor(emptyIndex / size) || index % size === emptyIndex % size)) {
+                pieces[emptyIndex] = piece;
+                pieces[index] = null;
+                moves++;
+                moveCounter.textContent = moves;
+                renderPuzzle();
+                checkWin();
+            }
+        }
+
+        function checkWin() {
+            if (pieces.slice(0, -1).every((piece, i) => piece === i + 1)) {
+                clearInterval(timer);
+                alert(`Congratulations! You completed the puzzle in ${Math.floor(seconds / 60)}:${seconds % 60 < 10 ? '0' + seconds % 60 : seconds % 60} minutes with ${moves} moves.`);
+            }
+        }
+
+        function startGame(difficulty) {
+            switch(difficulty) {
+                case 'easy':
+                    size = 3;
+                    break;
+                case 'medium':
+                    size = 4;
+                    break;
+                case 'hard':
+                    size = 5;
+                    break;
+            }
+            createPieces(size);
+            shuffle();
+            menu.style.display = 'none';
+            game.style.display = 'flex';
+        }
+
+        window.onload = () => {
+            menu.style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
